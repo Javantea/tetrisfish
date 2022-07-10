@@ -122,7 +122,7 @@ def getCurrentPiece(pieces):
         i += 1
 
     return detectedPiece
-                    
+
 
 # Remove top piece from the board. Use in conjunction with getCurrentPiece()
 # Returns a new array, does not modify original.

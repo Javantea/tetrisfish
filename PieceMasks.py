@@ -1,6 +1,8 @@
 import random
 import numpy as np
-import config as c
+
+NTSC = 0
+PAL = 1
 
 # 8x4 masks for all seven tetronimos to be used in next box
 
@@ -243,8 +245,8 @@ START_LEVELS = [9, 12, 15, 18, 19, 29]
 
 # Multiply by 6/5 by PAL. Format is [NTSC, PAL]
 timelineNum = [None] * 2
-timelineNum[c.NTSC] = [10, 11, 12, 13, 14, 15, 20, 24, 30]
-timelineNum[c.PAL] = [10, 11, 12.5, 13, 14, 15, 17, 20, 25]
+timelineNum[NTSC] = [10, 11, 12, 13, 14, 15, 20, 24, 30]
+timelineNum[PAL] = [10, 11, 12.5, 13, 14, 15, 17, 20, 25]
 
 timeline = []
 TIMELINE_MAX_HZ = "X."

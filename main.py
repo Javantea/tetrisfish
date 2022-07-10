@@ -17,6 +17,7 @@ import SaveAnalysis
 from TetrisUtility import *
 from Callibration import Calibrator
 from RenderVideo import render
+from ParseVideo import render as parse_render
 from Analysis import analyze
 import Evaluator
 from multiprocessing.dummy import Pool as ThreadPool
@@ -94,14 +95,19 @@ def run(positionDatabase = None, hzInt = None):
             print("Successfully callibrated video.")
             print("First, last:", firstFrame, lastFrame)
             
-
-            positionDatabase = render(firstFrame, lastFrame, bounds, nextBounds, level, lines, score)
+            if c.use_stackrabbit:
+                positionDatabase = render(firstFrame, lastFrame, bounds, nextBounds, level, lines, score)
+            else:
+                positionDatabase = parse_render(firstFrame, lastFrame, bounds, nextBounds, level, lines, score)
             print("Num positions: ", len(positionDatabase))
             
         if positionDatabase is not None:
             # If true, logo clicked and go back to calibration
-            print("starting analysis")
-            running = analyze(positionDatabase, hzInt)
+            if c.use_stackrabbit:
+                print("starting analysis")
+                running = analyze(positionDatabase, hzInt)
+            else:
+                SaveAnalysis.write(positionDatabase, c.gamemode, hzInt, c.hzString)
 
             
             #cProfile.runctx('analyze(positionDatabase, hzInt)', globals(), locals(), sort = "cumtime")
@@ -118,6 +124,15 @@ def run(positionDatabase = None, hzInt = None):
     
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Tetrisfish")
+    parser.add_argument('-n', '--no-stackrabbit', action='store_true')
+    args = parser.parse_args()
+    c.use_stackrabbit = not args.no_stackrabbit
+    if c.use_stackrabbit:
+        # Temporary so that I can work on my code.
+        print("Stackrabbit temporarily disabled, see code")
+        return
 
     try:
         import pyi_splash

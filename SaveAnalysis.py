@@ -129,9 +129,10 @@ def encodePositions(positionDatabase, gamemode, hzNum, hzTimeline):
 
             nJson = {}
             pn = p.moveNNB
-            nJson["eval"] = pn.evaluation
-            nJson["m1"] = encodeArray(pn.move1)
-            nJson["text"] = pn.depth3Text
+            if pn:
+                nJson["eval"] = pn.evaluation
+                nJson["m1"] = encodeArray(pn.move1)
+                nJson["text"] = pn.depth3Text
             
             pJson["nnb"] = nJson
 
@@ -155,6 +156,7 @@ def encodePositions(positionDatabase, gamemode, hzNum, hzTimeline):
         except:
             print("skip position", i)
             print(traceback.format_exc())
+            raise Exception("Save failed")
             
         i += 1
 
