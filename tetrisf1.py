@@ -156,20 +156,26 @@ TETRONIMO_NAMES = {-1 : "UNDEFINED", None : "None", I_PIECE : "LONGBAR", L_PIECE
 translate_names = {'LONGBAR':'I', 'L-PIECE':'L', 'J-PIECE':'J', 'S-PIECE':'S', 'Z-PIECE':'Z', 'T-PIECE':'T', 'O-PIECE':'O', "None":"_"}
 
 # Don't need to parse every piece
-paranoia = False
+decodePieces = False
 
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="Tetrisfish")
     parser.add_argument('filename')
+    parser.add_argument('level', type=int, nargs='?', default=0)
     args = parser.parse_args()
     file = open(args.filename, 'r')
     positionDatabase = ast.literal_eval(file.read())
     i = 0
+    clears = []
     pieces = []
+    prevLines = 0
+    pointsTetrises = 0
+    pointsOther = 0
+
     droughts = {'L-PIECE':[], 'J-PIECE':[], 'S-PIECE':[], 'Z-PIECE':[], 'T-PIECE':[], 'LONGBAR':[], 'O-PIECE':[]}
     for position in positionDatabase['positions']:
-        if paranoia or len(pieces) == 0:
+        if decodePieces:
             pp = decodeArray(position['placement'])
             # Just the rows with the pieces please.
             curr_piece = getPiece(trim(pp))
@@ -182,9 +188,23 @@ def main():
             #print('next', TETRONIMO_NAMES[position['next']])
             i += 1
             #if i > 1: break
-        if not paranoia:
+        else:
             # We can use next box instead of computation to determine piece sequence.
-            pieces.append(TETRONIMO_NAMES[position['next']])
+            pieces.append(TETRONIMO_NAMES[position['current']])
+        if position['lines'] > prevLines:
+            cleared = position['lines'] - prevLines
+            if cleared == 4:
+                points = 1200 * (position['level'] + 1)
+                #print("Tetris for {0} points".format(points))
+                pointsTetrises += points
+            elif cleared == 3:
+                pointsOther += 300 * (position['level'] + 1)
+            elif cleared == 2:
+                pointsOther += 100 * (position['level'] + 1)
+            elif cleared == 1:
+                pointsOther += 40 * (position['level'] + 1)
+            clears.append(cleared)
+            prevLines = position['lines']
 
     print(''.join([translate_names[piece] for piece in pieces]))
     dur_since = {'L-PIECE':0, 'J-PIECE':0, 'S-PIECE':0, 'Z-PIECE':0, 'T-PIECE':0, 'LONGBAR':0, 'O-PIECE':0}
@@ -195,9 +215,17 @@ def main():
             else:
                 droughts[piece].append(dur_since[piece])
                 dur_since[piece] = 0
-    print("Drought durations:")
+    print("Drought durations: max [sequence]")
     for piece in droughts:
-        print(piece, droughts[piece])
-
+        print(piece, max(droughts[piece]), droughts[piece])
+    print("Clears:")
+    print(clears)
+    tetrises = len([x for x in clears if x == 4])
+    triples = len([x for x in clears if x == 3])
+    doubles = len([x for x in clears if x == 2])
+    singles = len([x for x in clears if x == 1])
+    others  = len([x for x in clears if x not in (1, 2, 3, 4)])
+    print("TRT: {0}%".format(round(100 * pointsTetrises / (pointsTetrises + pointsOther))), pointsTetrises, '/', pointsTetrises + pointsOther)
+    print("{0} tetrises, {1} triples, {2} doubles, {3} singles{4}".format(tetrises, triples, doubles, singles, others and ', {0} ???'.format(others) or ''))
 if __name__ == '__main__':
     main()

@@ -2,6 +2,7 @@ import random
 from PieceMasks import *
 from TetrisUtility import print2d, getPlacementStr, isArray
 import AnalysisConstants as AC
+import config as c
 
 BLUNDER_THRESHOLD = -50
 
