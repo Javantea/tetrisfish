@@ -1,12 +1,73 @@
+#!/usr/bin/env python3
+"""
+Piece Sequence and Drought Information
+by Javantea
+July 9, 2022
+
+"""
 import ast
 import binascii
 import base64
 import numpy as np
 import PieceMasks as PM
 
+# TODO: optimization, remove piece masks and padding.
+
+I_PIECESHAPE = np.array([
+    [
+        [0,0,0,0],
+        [1,1,1,1],
+        [0,0,0,0],
+        [0,0,0,0]
+    ],
+    [
+        [0,1,0,0],
+        [0,1,0,0],
+        [0,1,0,0],
+        [0,1,0,0]
+    ],
+    [
+        [0,0,1,0],
+        [0,0,1,0],
+        [0,0,1,0],
+        [0,0,1,0]
+    ]
+])
+
+T_PIECESHAPE = np.array([
+    [
+        [0,0,0,0],
+        [0,1,1,1],
+        [0,0,1,0],
+        [0,0,0,0]
+    ],
+    [
+        [0,0,1,0],
+        [0,1,1,0],
+        [0,0,1,0],
+        [0,0,0,0]
+    ],
+    [
+        [0,0,1,0],
+        [0,1,1,1],
+        [0,0,0,0],
+        [0,0,0,0]
+    ],
+    [
+        [0,1,0,0],
+        [0,1,1,0],
+        [0,1,0,0],
+        [0,0,0,0]
+    ]
+], dtype = np.uint8)
+TETRONIMO_SHAPES = [I_PIECESHAPE, PM.L_PIECESHAPE, PM.Z_PIECESHAPE, PM.S_PIECESHAPE, PM.J_PIECESHAPE, T_PIECESHAPE, PM.O_PIECESHAPE]
+
 # From SaveAnalysis.
 # Take encoded string, return nparray.
 def decodeArray(string):
+    """
+    Convert AAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAYAg== to a 20x10 board.
+    """
 
     b = base64.decodebytes(string)
     int8 = np.frombuffer(b, dtype=np.uint8)
@@ -14,32 +75,70 @@ def decodeArray(string):
     #print(decoded.dtype)
     return decoded
 
-def compare(piece_rot, data):
-    if piece_rot.size != data.size:
-        print('diff size', piece_rot.size, data.size)
+def compare(piece_rot, data, verbose=False):
+    """
+    compare two arrays with similar size
+    TODO: Test with a lot of pieces.
+    """
+    if piece_rot.shape != data.shape:
+        #print('diff size', piece_rot.shape, data.shape)
         return False
-    #print(piece_rot)
-    #print(data)
+    if verbose: print('compare')
+    if verbose: print(piece_rot)
+    if verbose: print(data)
     for i in range(len(piece_rot)):
         for j in range(len(piece_rot[i])):
             if piece_rot[i][j] != data[i][j]: return False
     return True
 
-def findPiece(place, piece_rot):
-    piece_width = len(piece_rot)
+def findPiece(place, piece_rot, verbose=False):
+    """
+    Compare 4 rows of placement data with a piece rotated.
+    """
+    #print('piece')
+    #print(piece_rot)
+    #if verbose: print('place', place.shape)
+    #if verbose: print(place)
+    piece_width = piece_rot.shape[1]
     #print('lp', len(place[0]))
     #print(piece_width)
-    for i in range(len(place[0])-piece_width):
-        if compare(piece_rot, place[:,i:i+piece_width]):
+    #if verbose: print('fpd', place.shape[0]-piece_width)
+    for i in range(place.shape[1] + 1 - piece_width):
+        if compare(piece_rot, place[:,i:i+piece_width], verbose):
             return True
 
-def getPiece(place):
-    place_fixed = np.lib.pad(place, ((0,1),(0,0)), 'constant', constant_values=(0))
-    #print('lpf', len(place_fixed))
-    #print(place_fixed)
-    for i, piece in enumerate(PM.TETRONIMO_SHAPES): # [PM.S_PIECESHAPE]):#
+def trim(data):
+    """
+    Remove rows that are all 0.
+    """
+    row_with_pieces = []
+    for j, row in enumerate(data):
+        if 1 in row:
+            row_with_pieces.append(j)
+    use_rows = (row_with_pieces[0], row_with_pieces[-1] + 1)
+    return data[use_rows[0]:use_rows[1]]
+
+def getPiece(place, verbose=False):
+    """
+    Find out which piece is in this 3 or 4 tall frame.
+    """
+    place_fixed = place
+    #if place_fixed.shape[0] < 4:
+       #if place_fixed.shape[0] == 2:
+           #place_fixed = np.lib.pad(place, ((1, 1),(1, 0)), 'constant', constant_values=(0))
+       #else:
+           #place_fixed = np.lib.pad(place, ((0, 4 - place_fixed.shape[0]),(1, 0)), 'constant', constant_values=(0))
+    #else:
+    place_fixed = np.lib.pad(place, ((0, 0),(2, 1)), 'constant', constant_values=(0))
+    #if place_fixed.shape[0] != 4:
+    #    print("FIXME: getPiece is not working")
+    #    return None
+    if verbose: print('lpf', len(place_fixed))
+    if verbose: print(place_fixed)
+    for i, piece in enumerate(TETRONIMO_SHAPES): # [PM.S_PIECESHAPE]):#
         for piece_rot in piece:
-            r = findPiece(place_fixed, piece_rot)
+            # FIXME: store trimmed values.
+            r = findPiece(place_fixed, trim(piece_rot), verbose)
             if r: return i
     return None
 
@@ -54,7 +153,7 @@ NO_PIECE = 7
 
 TETRONIMOS = [I_PIECE, L_PIECE, Z_PIECE, S_PIECE, J_PIECE, T_PIECE, O_PIECE]
 TETRONIMO_NAMES = {-1 : "UNDEFINED", None : "None", I_PIECE : "LONGBAR", L_PIECE : "L-PIECE", Z_PIECE : "Z-PIECE", S_PIECE : "S-PIECE", J_PIECE : "J-PIECE", T_PIECE : "T-PIECE", O_PIECE : "O-PIECE"}
-translate_names = {'LONGBAR':'I', 'L-PIECE':'L', 'J-PIECE':'J', 'S-PIECE':'S', 'Z-PIECE':'Z', 'T-PIECE':'T', 'O-PIECE':'O'}
+translate_names = {'LONGBAR':'I', 'L-PIECE':'L', 'J-PIECE':'J', 'S-PIECE':'S', 'Z-PIECE':'Z', 'T-PIECE':'T', 'O-PIECE':'O', "None":"_"}
 
 # Don't need to parse every piece
 paranoia = False
@@ -70,22 +169,19 @@ def main():
     pieces = []
     droughts = {'L-PIECE':[], 'J-PIECE':[], 'S-PIECE':[], 'Z-PIECE':[], 'T-PIECE':[], 'LONGBAR':[], 'O-PIECE':[]}
     for position in positionDatabase['positions']:
-        # AAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAYAg==
         if paranoia or len(pieces) == 0:
             pp = decodeArray(position['placement'])
             # Just the rows with the pieces please.
-            row_with_pieces = []
-            for j, row in enumerate(pp):
-                if 1 in row:
-                    row_with_pieces.append(j)
-            use_rows = (row_with_pieces[0], row_with_pieces[-1] + 1)
-            print(pp[use_rows[0]:use_rows[1]])
-            curr_piece = getPiece(pp[use_rows[0]:use_rows[1]])
-            print('curr', curr_piece)
-            pieces.append(TETRONIMO_NAMES[curr_piece])
+            curr_piece = getPiece(trim(pp))
+            if curr_piece is None:
+                curr_piece = getPiece(trim(pp), True)
+                print(trim(pp))
+            #print('piece found', curr_piece, curr_piece in TETRONIMO_NAMES and TETRONIMO_NAMES[curr_piece])
+            if curr_piece in TETRONIMO_NAMES:
+                pieces.append(TETRONIMO_NAMES[curr_piece])
             #print('next', TETRONIMO_NAMES[position['next']])
             i += 1
-            if i > 1: break
+            #if i > 1: break
         if not paranoia:
             # We can use next box instead of computation to determine piece sequence.
             pieces.append(TETRONIMO_NAMES[position['next']])
@@ -99,6 +195,7 @@ def main():
             else:
                 droughts[piece].append(dur_since[piece])
                 dur_since[piece] = 0
+    print("Drought durations:")
     for piece in droughts:
         print(piece, droughts[piece])
 
