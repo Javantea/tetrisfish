@@ -129,11 +129,10 @@ def main():
     parser.add_argument('-n', '--no-stackrabbit', action='store_true')
     args = parser.parse_args()
     c.use_stackrabbit = not args.no_stackrabbit
-    if c.use_stackrabbit:
+    #if c.use_stackrabbit:
         # Temporary so that I can work on my code.
-        print("Stackrabbit temporarily disabled, see code")
-        return
-
+        #print("Stackrabbit temporarily disabled, see code")
+        #return
     try:
         import pyi_splash
         pyi_splash.close()

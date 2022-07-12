@@ -140,6 +140,7 @@ def calculateSummary(positionDatabase):
     gsummary = pygame.Surface([550,400], pygame.SRCALPHA)
     y = 0
     for f in reversed(AC.feedback):
+        if f == AC.INVALID: continue
         color = AC.feedbackColors[f]
         blitCenterText(gsummary, c.fontbold, str(count[f]), color, y+4, s = 0)
         y += 41
@@ -309,6 +310,7 @@ def analyze(positionDatabase, hzInt):
     x = 2250
     y = 140
     for f in reversed(AC.feedback):
+        if f == AC.INVALID: continue
         name = AC.feedbackString[f]
         color = AC.feedbackColors[f]
 
@@ -483,6 +485,7 @@ def analyze(positionDatabase, hzInt):
 
         # If rating label has been clicked, go to next position with that label
         for f in AC.feedback:
+            if f == AC.INVALID: continue
             if buttons.get(AC.feedbackString[f]).pressed and (startPressed or rightClick):
 
                 foundIndex = getIndex(feedback, analysisBoard.positionNum, f, direction = 1 if startPressed else -1)
