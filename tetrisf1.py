@@ -172,6 +172,8 @@ def main():
     prevLines = 0
     pointsTetrises = 0
     pointsOther = 0
+    linesTetrises = 0
+    linesOther = 0
 
     droughts = {'L-PIECE':[], 'J-PIECE':[], 'S-PIECE':[], 'Z-PIECE':[], 'T-PIECE':[], 'LONGBAR':[], 'O-PIECE':[]}
     for position in positionDatabase['positions']:
@@ -197,12 +199,16 @@ def main():
                 points = 1200 * (position['level'] + 1)
                 #print("Tetris for {0} points".format(points))
                 pointsTetrises += points
+                linesTetrises += 4
             elif cleared == 3:
                 pointsOther += 300 * (position['level'] + 1)
+                linesOther += cleared
             elif cleared == 2:
                 pointsOther += 100 * (position['level'] + 1)
+                linesOther += cleared
             elif cleared == 1:
                 pointsOther += 40 * (position['level'] + 1)
+                linesOther += cleared
             clears.append(cleared)
             prevLines = position['lines']
 
@@ -215,6 +221,12 @@ def main():
             else:
                 droughts[piece].append(dur_since[piece])
                 dur_since[piece] = 0
+    if len(pieces) > 0:
+        # every piece has a drought at the end we need to quantify
+        last_piece = pieces[-1]
+        for x in dur_since:
+            droughts[x].append(dur_since[x])
+
     print("Drought durations: max [sequence]")
     for piece in droughts:
         print(piece, max(droughts[piece]), droughts[piece])
@@ -225,7 +237,7 @@ def main():
     doubles = len([x for x in clears if x == 2])
     singles = len([x for x in clears if x == 1])
     others  = len([x for x in clears if x not in (1, 2, 3, 4)])
-    print("TRT: {0}%".format(round(100 * pointsTetrises / (pointsTetrises + pointsOther))), pointsTetrises, '/', pointsTetrises + pointsOther)
+    print("TRT: {0}%".format(round(100 * linesTetrises / (linesTetrises + linesOther))), linesTetrises, '/', linesTetrises + linesOther)
     print("{0} tetrises, {1} triples, {2} doubles, {3} singles{4}".format(tetrises, triples, doubles, singles, others and ', {0} ???'.format(others) or ''))
 if __name__ == '__main__':
     main()
